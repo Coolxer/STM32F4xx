@@ -21,7 +21,7 @@
 
 #include "driver.h"
 
-#if defined(BOARD_MORPHO_CNC)
+#if defined(BOARD_MORPHO_CNC) || defined(BOARD_MY_MACHINE)
 
 #include <math.h>
 #include <string.h>
@@ -33,7 +33,8 @@
 
 #if TRINAMIC_ENABLE == 2130 || TRINAMIC_ENABLE == 5160
 
-static struct {
+static struct
+{
     GPIO_TypeDef *port;
     uint32_t pin;
 } cs;
@@ -41,7 +42,7 @@ static struct {
 static uint_fast8_t n_motors;
 static TMC_spi_datagram_t datagram[TMC_N_MOTORS_MAX];
 
-TMC_spi_status_t tmc_spi_read (trinamic_motor_t driver, TMC_spi_datagram_t *reg)
+TMC_spi_status_t tmc_spi_read(trinamic_motor_t driver, TMC_spi_datagram_t *reg)
 {
     static TMC_spi_status_t status = 0;
 
@@ -55,55 +56,64 @@ TMC_spi_status_t tmc_spi_read (trinamic_motor_t driver, TMC_spi_datagram_t *reg)
 
     DIGITAL_OUT(cs.port, cs.pin, 0);
 
-    do {
+    do
+    {
         spi_put_byte(datagram[--idx].addr.value);
         spi_put_byte(0);
         spi_put_byte(0);
         spi_put_byte(0);
         spi_put_byte(0);
-    } while(idx);
+    } while (idx);
 
-    while(--dly);
+    while (--dly)
+        ;
 
     DIGITAL_OUT(cs.port, cs.pin, 1);
 
     dly = 50;
-    while(--dly);
+    while (--dly)
+        ;
 
     DIGITAL_OUT(cs.port, cs.pin, 0);
 
     idx = n_motors;
-    do {
+    do
+    {
         res = spi_put_byte(datagram[--idx].addr.value);
 
-        if(idx == driver.seq) {
+        if (idx == driver.seq)
+        {
             status = res;
             reg->payload.data[3] = spi_get_byte();
             reg->payload.data[2] = spi_get_byte();
             reg->payload.data[1] = spi_get_byte();
             reg->payload.data[0] = spi_get_byte();
-        } else {
+        }
+        else
+        {
             spi_get_byte();
             spi_get_byte();
             spi_get_byte();
             spi_get_byte();
         }
-    } while(idx);
+    } while (idx);
 
     dly = 100;
-    while(--dly);
+    while (--dly)
+        ;
 
     DIGITAL_OUT(cs.port, cs.pin, 1);
 
     dly = 50;
-    while(--dly);
+    while (--dly)
+        ;
 
     spi_set_speed(f_spi);
 
     return status;
 }
 
-TMC_spi_status_t tmc_spi_write (trinamic_motor_t driver, TMC_spi_datagram_t *reg)
+TMC_spi_status_t tmc_spi_write(trinamic_motor_t driver, TMC_spi_datagram_t *reg)
 {
     TMC_spi_status_t status = 0;
 
@@ -117,41 +127,46 @@ TMC_spi_status_t tmc_spi_write (trinamic_motor_t driver, TMC_spi_datagram_t *reg
 
     DIGITAL_OUT(cs.port, cs.pin, 0);
 
-    do {
+    do
+    {
         res = spi_put_byte(datagram[--idx].addr.value);
         spi_put_byte(datagram[idx].payload.data[3]);
         spi_put_byte(datagram[idx].payload.data[2]);
         spi_put_byte(datagram[idx].payload.data[1]);
         spi_put_byte(datagram[idx].payload.data[0]);
 
-        if(idx == driver.seq) {
+        if (idx == driver.seq)
+        {
             status = res;
             datagram[idx].addr.idx = 0; // TMC_SPI_STATUS_REG;
             datagram[idx].addr.write = 0;
         }
-    } while(idx);
+    } while (idx);
 
-    while(--dly);
+    while (--dly)
+        ;
 
     DIGITAL_OUT(cs.port, cs.pin, 1);
 
     dly = 50;
-    while(--dly);
+    while (--dly)
+        ;
 
     spi_set_speed(f_spi);
 
     return status;
 }
 
-static void add_cs_pin (xbar_t *gpio)
+static void add_cs_pin(xbar_t *gpio)
 {
-    if(gpio->function == Output_MotorChipSelect) {
+    if (gpio->function == Output_MotorChipSelect)
+    {
         cs.pin = gpio->pin;
         cs.port = (GPIO_TypeDef *)gpio->port;
     }
 }
 
-static void if_init (uint8_t motors, axes_signals_t axisflags)
+static void if_init(uint8_t motors, axes_signals_t axisflags)
 {
     n_motors = motors;
     hal.enumerate_pins(true, add_cs_pin);
@@ -165,28 +180,32 @@ static void if_init (uint8_t motors, axes_signals_t axisflags)
 
 static io_stream_t tmc_uart;
 
-TMC_uart_write_datagram_t *tmc_uart_read (trinamic_motor_t driver, TMC_uart_read_datagram_t *dgr)
+TMC_uart_write_datagram_t *tmc_uart_read(trinamic_motor_t driver, TMC_uart_read_datagram_t *dgr)
 {
     static TMC_uart_write_datagram_t wdgr = {0};
     volatile uint32_t dly = 50, ms = hal.get_elapsed_ticks();
 
-//    tmc_uart.reset_write_buffer();
+    //    tmc_uart.reset_write_buffer();
     tmc_uart.write_n((char *)dgr->data, sizeof(TMC_uart_read_datagram_t));
 
-    while(tmc_uart.get_tx_buffer_count());
+    while (tmc_uart.get_tx_buffer_count())
+        ;
 
-    while(--dly);
+    while (--dly)
+        ;
 
     tmc_uart.disable(false);
     tmc_uart.reset_read_buffer();
 
     // Wait for response with 2ms timeout
-    while(tmc_uart.get_rx_buffer_count() < 8) {
-        if(hal.get_elapsed_ticks() - ms >= 3)
+    while (tmc_uart.get_rx_buffer_count() < 8)
+    {
+        if (hal.get_elapsed_ticks() - ms >= 3)
             break;
     }
 
-    if((tmc_uart.get_rx_buffer_count()) >= 8) {
+    if ((tmc_uart.get_rx_buffer_count()) >= 8)
+    {
         wdgr.data[0] = tmc_uart.read();
         wdgr.data[1] = tmc_uart.read();
         wdgr.data[2] = tmc_uart.read();
@@ -195,39 +214,42 @@ TMC_uart_write_datagram_t *tmc_uart_read (trinamic_motor_t driver, TMC_uart_read
         wdgr.data[5] = tmc_uart.read();
         wdgr.data[6] = tmc_uart.read();
         wdgr.data[7] = tmc_uart.read();
-    } else
+    }
+    else
         wdgr.msg.addr.value = 0xFF;
 
     tmc_uart.disable(true);
 
     dly = 5000;
-    while(--dly);
+    while (--dly)
+        ;
 
     return &wdgr;
 }
 
-void tmc_uart_write (trinamic_motor_t driver, TMC_uart_write_datagram_t *dgr)
+void tmc_uart_write(trinamic_motor_t driver, TMC_uart_write_datagram_t *dgr)
 {
     tmc_uart.write_n((char *)dgr->data, sizeof(TMC_uart_write_datagram_t));
-    while(tmc_uart.get_tx_buffer_count());
+    while (tmc_uart.get_tx_buffer_count())
+        ;
 }
 
 #endif
 
-void board_init (void)
+void board_init(void)
 {
 #if TRINAMIC_ENABLE == 2130 || TRINAMIC_ENABLE == 5160
 
     trinamic_driver_if_t driver = {
-        .on_drivers_init = if_init
-    };
+        .on_drivers_init = if_init};
 
     spi_init();
 
     uint_fast8_t idx = TMC_N_MOTORS_MAX;
-    do {
+    do
+    {
         datagram[--idx].addr.idx = 0; //TMC_SPI_STATUS_REG;
-    } while(idx);
+    } while (idx);
 
     trinamic_if_init(&driver);
 

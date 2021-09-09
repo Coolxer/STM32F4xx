@@ -1,20 +1,15 @@
 /*
   my_machine.h - configuration for STM32F4xx ARM processors
-
   Part of grblHAL
-
   Copyright (c) 2020-2021 Terje Io
-
   Grbl is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
-
   Grbl is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
   You should have received a copy of the GNU General Public License
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -31,13 +26,13 @@
 //#define BOARD_MINI_BLACKPILL  // For use with F411 BlackPill, https://github.com/avizienis/Minimal-Black-Pill--STM32F4xx-BOB-for-grblHAL
 //#define BOARD_BTT_SKR_PRO_1_1 // F407 based 3D Printer board
 //#define BOARD_BTT_SKR_20      // F407 based 3D Printer board
-//#define BOARD_MY_MACHINE      // Add my_machine_map.h before enabling this!
+#define BOARD_MY_MACHINE // Add my_machine_map.h before enabling this!
 
 // Configuration
 // Uncomment to enable.
 
 #if !(defined(NUCLEO_F411) || defined(NUCLEO_F446)) // The Nucleo-F411RE board has an off-chip UART to USB interface.
-#define USB_SERIAL_CDC       1 // Serial communication via native USB.
+#define USB_SERIAL_CDC 1                            // Serial communication via native USB.
 #endif
 //#define BLUETOOTH_ENABLE     1 // Set to 1 for HC-05 module. Requires Bluetooth plugin.
 //#define SPINDLE_HUANYANG     1 // Set to 1 or 2 for Huanyang VFD spindle. Requires spindle plugin. !! NOT TESTED !!
@@ -69,4 +64,3 @@
 //#define Y_GANGED_LIM_MAX    1
 //#define Z_GANGED_LIM_MAX    1
 //
-
